@@ -861,8 +861,6 @@ export default function toScratchJS(
         constructor(...args) {
           super(...args);
 
-          this.name = ${JSON.stringify(target.name)};
-
           this.costumes = [
             ${target.costumes
               .map(
