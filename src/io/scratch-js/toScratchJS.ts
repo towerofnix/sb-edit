@@ -809,7 +809,7 @@ export default function toScratchJS(
       ${[project.stage, ...project.sprites]
         .map(
           target =>
-            `import ${targetClassNameMap[target.name]} from ${JSON.stringify(options.getTargetURL({ name: target.name, from: "index" }))};`
+            `import ${targetClassNameMap[target.name]} from ${JSON.stringify(options.getTargetURL({ name: targetClassNameMap[target.name], from: "index" }))};`
         )
         .join("\n")}
 
@@ -851,12 +851,13 @@ export default function toScratchJS(
   };
 
   for (const target of [project.stage, ...project.sprites]) {
-    files[`${target.name}/${target.name}.mjs`] = `
+    const targetClassName = targetClassNameMap[target.name];
+    files[`${targetClassName}/${targetClassName}.mjs`] = `
       import { ${target.isStage ? "Stage as StageBase" : "Sprite"}, Trigger, Costume, Color, Sound } from '${
       options.scratchJSURL
     }';
 
-      export default class ${targetClassNameMap[target.name]} extends ${target.isStage ? "StageBase" : "Sprite"} {
+      export default class ${targetClassName} extends ${target.isStage ? "StageBase" : "Sprite"} {
         constructor(...args) {
           super(...args);
 
