@@ -287,18 +287,7 @@ export default function toScratchJS(
         case OpCode.motion_gotoxy:
           return `this.goto((${inputToJS(block.inputs.X)}), (${inputToJS(block.inputs.Y)}))`;
         case OpCode.motion_glideto:
-          switch (block.inputs.TO.value) {
-            case "_random_":
-              return `yield* this.glide((${inputToJS(
-                block.inputs.SECS
-              )}), this.random(-240, 240), this.random(-180, 180))`;
-            case "_mouse_":
-              return `yield* this.glide((${inputToJS(block.inputs.SECS)}), this.mouse.x, this.mouse.y)`;
-            default: {
-              const sprite = targetToJS(block.inputs.TO);
-              return `yield* this.glide((${inputToJS(block.inputs.SECS)}), ${sprite}.x, ${sprite}.y)`;
-            }
-          }
+          return `yield* this.glideTo(${inputToJS(block.inputs.SECS)}, ${inputToJS(block.inputs.TO)})`;
         case OpCode.motion_glidesecstoxy:
           return `yield* this.glide((${inputToJS(block.inputs.SECS)}), (${inputToJS(block.inputs.X)}), (${inputToJS(
             block.inputs.Y
@@ -306,14 +295,7 @@ export default function toScratchJS(
         case OpCode.motion_pointindirection:
           return `this.direction = (${inputToJS(block.inputs.DIRECTION)})`;
         case OpCode.motion_pointtowards:
-          switch (block.inputs.TOWARDS.value) {
-            case "_mouse_":
-              return `this.direction = this.radToScratch(Math.atan2(this.mouse.y - this.y, this.mouse.x - this.x))`;
-            default: {
-              const sprite = targetToJS(block.inputs.TOWARDS);
-              return `this.direction = this.radToScratch(Math.atan2(${sprite}.y - this.y, ${sprite}.x - this.x))`;
-            }
-          }
+          return `this.pointTowards(${inputToJS(block.inputs.TOWARDS)});`;
         case OpCode.motion_changexby:
           return `this.x += (${inputToJS(block.inputs.DX)})`;
         case OpCode.motion_setx:
@@ -464,12 +446,13 @@ export default function toScratchJS(
               return `/* TODO: Implement stop ${block.inputs.STOP_OPTION.value} */ null`;
           }
         case OpCode.control_create_clone_of:
-          switch (block.inputs.CLONE_OPTION.value) {
-            case "_myself_":
-              return `this.createClone()`;
-            default:
-              return `${targetToJS(block.inputs.CLONE_OPTION)}.createClone()`;
+          let target;
+          if (block.inputs.CLONE_OPTION.value === "_myself_") {
+            target = "this";
+          } else {
+            target = inputToJS(block.inputs.CLONE_OPTION);
           }
+          return `this.createCloneOf(${target})`;
         case OpCode.control_delete_this_clone:
           return `this.deleteThisClone()`;
         case OpCode.control_get_counter:
@@ -513,14 +496,7 @@ export default function toScratchJS(
           return `this.colorTouching((${color1}), (${color2}))`;
         }
         case OpCode.sensing_distanceto:
-          switch (block.inputs.DISTANCETOMENU.value) {
-            case "_mouse_":
-              return `(Math.hypot(this.mouse.x - this.x, this.mouse.y - this.y))`;
-            default: {
-              const sprite = targetToJS(block.inputs.DISTANCETOMENU);
-              return `(Math.hypot(${sprite}.x - this.x, ${sprite}.y - this.y))`;
-            }
-          }
+          return `this.distanceTo(${inputToJS(block.inputs.DISTANCETOMENU)})`;
         case OpCode.sensing_askandwait:
           return `yield* this.askAndWait(${inputToJS(block.inputs.QUESTION)})`;
         case OpCode.sensing_answer:
@@ -579,7 +555,11 @@ export default function toScratchJS(
 
           const target = targetToJS(block.inputs.OBJECT);
 
-          return `${target}.${propName}`;
+          if (block.inputs.OBJECT.type === "target") {
+            return `this.sprites[${inputToJS(block.inputs.OBJECT)}.${propName}`;
+          } else {
+            return `(${inputToJS(block.inputs.OBJECT)} in this.sprites) ? this.sprites[${inputToJS(block.inputs.OBJECT)}].${propName} : 0`;
+          }
         }
         case OpCode.sensing_current:
           switch (block.inputs.CURRENTMENU.value) {
