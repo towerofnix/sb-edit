@@ -122,14 +122,13 @@ export default function toScratchJS(
   // Names changed first are less likely to be ugly
   const uniqueName = uniqueNameGenerator();
 
-  let targetNameMap = {};
+  let targetClassNameMap = {};
   let customBlockArgNameMap: Map<Script, { [key: string]: string }> = new Map();
   let variableNameMap: Map<Target, { [key: string]: string }> = new Map();
 
   for (const target of [project.stage, ...project.sprites]) {
-    const newTargetName = uniqueName(camelCase(target.name, true));
-    targetNameMap[target.name] = newTargetName;
-    target.setName(newTargetName);
+    const targetClassName = uniqueName(camelCase(target.name, true));
+    targetClassNameMap[target.name] = targetClassName;
 
     let uniqueVariableName = uniqueName.branch();
 
@@ -259,6 +258,13 @@ export default function toScratchJS(
       }
 
       const stage = "this" + (target.isStage ? "" : ".stage");
+      const targetToJS = targetInput => {
+        if (targetInput.value === "_stage_") {
+          return stage;
+        } else {
+          return `this.sprites[${inputToJS(targetInput)}]`;
+        }
+      };
 
       switch (block.opcode) {
         case OpCode.motion_movesteps:
@@ -274,7 +280,7 @@ export default function toScratchJS(
             case "_mouse_":
               return `this.goto(this.mouse.x, this.mouse.y)`;
             default: {
-              const sprite = `(this.sprites[${JSON.stringify(targetNameMap[block.inputs.TO.value])}])`;
+              const sprite = targetToJS(block.inputs.TO);
               return `this.goto(${sprite}.x, ${sprite}.y)`;
             }
           }
@@ -289,7 +295,7 @@ export default function toScratchJS(
             case "_mouse_":
               return `yield* this.glide((${inputToJS(block.inputs.SECS)}), this.mouse.x, this.mouse.y)`;
             default: {
-              const sprite = `(this.sprites[${JSON.stringify(targetNameMap[block.inputs.TO.value])}])`;
+              const sprite = targetToJS(block.inputs.TO);
               return `yield* this.glide((${inputToJS(block.inputs.SECS)}), ${sprite}.x, ${sprite}.y)`;
             }
           }
@@ -304,7 +310,7 @@ export default function toScratchJS(
             case "_mouse_":
               return `this.direction = this.radToScratch(Math.atan2(this.mouse.y - this.y, this.mouse.x - this.x))`;
             default: {
-              const sprite = `(this.sprites[${JSON.stringify(targetNameMap[block.inputs.TOWARDS.value])}])`;
+              const sprite = targetToJS(block.inputs.TOWARDS);
               return `this.direction = this.radToScratch(Math.atan2(${sprite}.y - this.y, ${sprite}.x - this.x))`;
             }
           }
@@ -462,7 +468,7 @@ export default function toScratchJS(
             case "_myself_":
               return `this.createClone()`;
             default:
-              return `this.sprites[${JSON.stringify(targetNameMap[block.inputs.CLONE_OPTION.value])}].createClone()`;
+              return `${targetToJS(block.inputs.CLONE_OPTION)}.createClone()`;
           }
         case OpCode.control_delete_this_clone:
           return `this.deleteThisClone()`;
@@ -477,9 +483,7 @@ export default function toScratchJS(
             case "_mouse_":
               return `this.touching("mouse")`;
             default:
-              return `this.touching(this.sprites[${JSON.stringify(
-                targetNameMap[block.inputs.TOUCHINGOBJECTMENU.value]
-              )}].andClones())`;
+              return `this.touching(${targetToJS(block.inputs.TOUCHINGOBJECTMENU)}.andClones())`;
           }
         case OpCode.sensing_touchingcolor:
           if (block.inputs.COLOR.type === "color") {
@@ -513,7 +517,7 @@ export default function toScratchJS(
             case "_mouse_":
               return `(Math.hypot(this.mouse.x - this.x, this.mouse.y - this.y))`;
             default: {
-              const sprite = `this.sprites[${JSON.stringify(targetNameMap[block.inputs.DISTANCETOMENU.value])}]`;
+              const sprite = targetToJS(block.inputs.DISTANCETOMENU);
               return `(Math.hypot(${sprite}.x - this.x, ${sprite}.y - this.y))`;
             }
           }
@@ -562,7 +566,8 @@ export default function toScratchJS(
             default:
               let varOwner: Target = project.stage;
               if (block.inputs.OBJECT.value !== "_stage_") {
-                varOwner = project.sprites.find(sprite => sprite.name === targetNameMap[block.inputs.OBJECT.value]);
+                // TODO: variable access in dynamic sprites
+                varOwner = project.sprites.find(sprite => sprite.name === block.inputs.OBJECT.value);
               }
               propName = `vars[${JSON.stringify(variableNameMap.get(varOwner)[block.inputs.PROPERTY.value])}]`;
               break;
@@ -572,14 +577,9 @@ export default function toScratchJS(
             return `/* Cannot access property ${block.inputs.PROPERTY.value} of target */ null`;
           }
 
-          let targetObj: string;
-          if (block.inputs.OBJECT.value === "_stage_") {
-            targetObj = `this.stage`;
-          } else {
-            targetObj = `this.sprites[${JSON.stringify(targetNameMap[block.inputs.OBJECT.value])}]`;
-          }
+          const target = targetToJS(block.inputs.OBJECT);
 
-          return `${targetObj}.${propName}`;
+          return `${target}.${propName}`;
         }
         case OpCode.sensing_current:
           switch (block.inputs.CURRENTMENU.value) {
@@ -809,7 +809,7 @@ export default function toScratchJS(
       ${[project.stage, ...project.sprites]
         .map(
           target =>
-            `import ${target.name} from ${JSON.stringify(options.getTargetURL({ name: target.name, from: "index" }))};`
+            `import ${targetClassNameMap[target.name]} from ${JSON.stringify(options.getTargetURL({ name: target.name, from: "index" }))};`
         )
         .join("\n")}
 
@@ -819,7 +819,7 @@ export default function toScratchJS(
         ${project.sprites
           .map(
             sprite =>
-              `${sprite.name}: new ${sprite.name}(${JSON.stringify({
+              `${JSON.stringify(sprite.name)}: new ${targetClassNameMap[sprite.name]}(${JSON.stringify({
                 x: sprite.x,
                 y: sprite.y,
                 direction: sprite.direction,
@@ -856,9 +856,11 @@ export default function toScratchJS(
       options.scratchJSURL
     }';
 
-      export default class ${target.name} extends ${target.isStage ? "StageBase" : "Sprite"} {
+      export default class ${targetClassNameMap[target.name]} extends ${target.isStage ? "StageBase" : "Sprite"} {
         constructor(...args) {
           super(...args);
+
+          this.name = ${JSON.stringify(target.name)};
 
           this.costumes = [
             ${target.costumes
