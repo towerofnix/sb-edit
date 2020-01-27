@@ -14,6 +14,8 @@ export default class Abby extends Sprite {
   constructor(...args) {
     super(...args);
 
+    this.name = \\"Abby\\";
+
     this.costumes = [
       new Costume(\\"abby-a\\", \\"./Abby/costumes/abby-a.svg\\", { x: 31, y: 100 }),
       new Costume(\\"abby-b\\", \\"./Abby/costumes/abby-b.svg\\", { x: 31, y: 100 }),
@@ -66,6 +68,8 @@ export default class Abby extends Sprite {
 export default class Stage extends StageBase {
   constructor(...args) {
     super(...args);
+
+    this.name = \\"Stage\\";
 
     this.costumes = [
       new Costume(\\"backdrop1\\", \\"./Stage/costumes/backdrop1.svg\\", {
@@ -125,8 +129,8 @@ export default class Stage extends StageBase {
     yield* this.askAndWait(this.mouse.y);
     yield* this.askAndWait(/* TODO: Implement sensing_loudness */ null);
     yield* this.askAndWait(this.timer);
-    yield* this.askAndWait(this.stage.costumeNumber);
-    yield* this.askAndWait(this.stage.vars[\\"CloudVar\\"]);
+    yield* this.askAndWait(this.costumeNumber);
+    yield* this.askAndWait(this.vars[\\"CloudVar\\"]);
     yield* this.askAndWait(new Date().getDay() + 1);
     yield* this.askAndWait(
       ((new Date().getTime() - new Date(2000, 0, 1)) / 1000 / 60 +
@@ -143,7 +147,7 @@ export default class Stage extends StageBase {
     while (!null) {
       yield;
     }
-    this.sprites[undefined].createClone();
+    this.sprites[0].createClone();
     for (let i = 0; i < 10; i++) {
       while (!this.keyPressed(\\"space\\")) {
         if (this.mouse.down) {
