@@ -14,8 +14,6 @@ export default class Abby extends Sprite {
   constructor(...args) {
     super(...args);
 
-    this.name = \\"Abby\\";
-
     this.costumes = [
       new Costume(\\"abby-a\\", \\"./Abby/costumes/abby-a.svg\\", { x: 31, y: 100 }),
       new Costume(\\"abby-b\\", \\"./Abby/costumes/abby-b.svg\\", { x: 31, y: 100 }),
@@ -68,8 +66,6 @@ export default class Abby extends Sprite {
 export default class Stage extends StageBase {
   constructor(...args) {
     super(...args);
-
-    this.name = \\"Stage\\";
 
     this.costumes = [
       new Costume(\\"backdrop1\\", \\"./Stage/costumes/backdrop1.svg\\", {
