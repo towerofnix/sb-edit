@@ -1,6 +1,7 @@
 import { Sprite, Stage } from "./Target";
 
 import fromSb3, { fromSb3JSON } from "./io/sb3/fromSb3";
+import toSb2 from "./io/sb2/toSb2";
 import toSb3 from "./io/sb3/toSb3";
 import toScratchJS from "./io/scratch-js/toScratchJS";
 import toScratchblocks from "./io/scratchblocks/toScratchblocks";
@@ -34,6 +35,7 @@ export default class Project {
   public static fromSb3 = fromSb3;
   public static fromSb3JSON = fromSb3JSON;
 
+  public toSb2: typeof toSb2 = toSb2.bind(this);
   public toScratchJS: typeof toScratchJS = toScratchJS.bind(this);
   public toScratchblocks: typeof toScratchblocks = toScratchblocks.bind(this);
 
