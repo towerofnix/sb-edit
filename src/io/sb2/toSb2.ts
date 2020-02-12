@@ -10,7 +10,7 @@ import { OpCode } from "../../OpCode";
 import { Sb2Target, Sb2Stage, Sb2Sprite } from "./interfaces";
 
 interface ToSb2Options {
-  penCostume: Costume,
+  penCostume?: Costume,
 
   convertUnsupportedSound(sound: Sound): Sound,
   getSoundFormat(sound: Sound): "" | "adpcm" | "squeak"
@@ -596,8 +596,8 @@ export default function toSb2(
     const {penCostume} = options;
     return {
       ...serializeTarget(stage),
-      penLayerMD5: penCostume.md5 + "." + penCostume.ext,
-      penLayerID: incrementCounter(penCostume.ext, penCostume),
+      penLayerMD5: penCostume && penCostume.md5 + "." + penCostume.ext,
+      penLayerID: penCostume && incrementCounter(penCostume.ext, penCostume),
       tempoBPM: 60,
       videoAlpha: 0.5,
       children: project.sprites.map((sprite, index) => serializeSprite(sprite, {indexInLibrary: index})),

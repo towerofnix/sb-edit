@@ -53,8 +53,8 @@ export interface Sb2Target {
 }
 
 export interface Sb2Stage extends Sb2Target {
-  penLayerID: number, // project.zip/(penLayerID).png or -1 if online
-  penLayerMD5: string, // includes .png
+  penLayerID?: number, // project.zip/(penLayerID).png or -1 if online
+  penLayerMD5?: string, // includes .png
   tempoBPM: number, // tempo is global in Scratch; defaults to 60
   videoAlpha: number, // defaults to 0.5
   info: any
