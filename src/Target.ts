@@ -40,7 +40,7 @@ type TargetOptions = Partial<Target> & { name: string };
 
 export class Stage extends Target {
   public name: string = "Stage";
-  public isStage = true;
+  public isStage: true = true;
 
   constructor(options: TargetOptions = { name: "Stage" }) {
     super(options);
